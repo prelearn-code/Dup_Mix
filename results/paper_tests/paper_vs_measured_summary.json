@@ -1,0 +1,202 @@
+{
+  "name": "paper_vs_measured_report",
+  "rows": [
+    {
+      "metric_id": "B_z300_prove_ms",
+      "paper_value": 7.05,
+      "measured_value": 13.7588,
+      "unit": "ms",
+      "delta_pct": 95.16,
+      "status": "not-comparable",
+      "source_file": "B_prove.csv",
+      "note": ""
+    },
+    {
+      "metric_id": "B_z460_prove_ms",
+      "paper_value": 10.82,
+      "measured_value": 20.3106,
+      "unit": "ms",
+      "delta_pct": 87.71,
+      "status": "not-comparable",
+      "source_file": "B_prove.csv",
+      "note": ""
+    },
+    {
+      "metric_id": "C_z300_verify_ms",
+      "paper_value": 613.92,
+      "measured_value": 893.1476,
+      "unit": "ms",
+      "delta_pct": 45.48,
+      "status": "not-comparable",
+      "source_file": "C_verify.csv",
+      "note": ""
+    },
+    {
+      "metric_id": "C_z460_verify_ms",
+      "paper_value": 883.36,
+      "measured_value": 1440.9984,
+      "unit": "ms",
+      "delta_pct": 63.13,
+      "status": "not-comparable",
+      "source_file": "C_verify.csv",
+      "note": ""
+    },
+    {
+      "metric_id": "E_update_1000_total_s",
+      "paper_value": 2.78,
+      "measured_value": 7.146693,
+      "unit": "s",
+      "delta_pct": 157.08,
+      "status": "not-comparable",
+      "source_file": "E_update.csv",
+      "note": ""
+    },
+    {
+      "metric_id": "G_file_tag_s",
+      "paper_value": 0.0008,
+      "measured_value": 0.008412,
+      "unit": "s",
+      "delta_pct": 951.54,
+      "status": "not-comparable",
+      "source_file": "G_file_level_dedup.csv",
+      "note": ""
+    },
+    {
+      "metric_id": "H_challenge_gas",
+      "paper_value": 390000.0,
+      "measured_value": 98591.0,
+      "unit": "gas",
+      "delta_pct": -74.72,
+      "status": "not-comparable",
+      "source_file": "H_audit_gas.csv",
+      "note": ""
+    },
+    {
+      "metric_id": "H_prove_gas",
+      "paper_value": 183000.0,
+      "measured_value": 508668.0,
+      "unit": "gas",
+      "delta_pct": 177.96,
+      "status": "not-comparable",
+      "source_file": "H_audit_gas.csv",
+      "note": ""
+    },
+    {
+      "metric_id": "H_verify_gas",
+      "paper_value": 2350000.0,
+      "measured_value": 1504423.0,
+      "unit": "gas",
+      "delta_pct": -35.98,
+      "status": "not-comparable",
+      "source_file": "H_audit_gas.csv",
+      "note": ""
+    },
+    {
+      "metric_id": "I_request_gas",
+      "paper_value": 148000.0,
+      "measured_value": 150822.0,
+      "unit": "gas",
+      "delta_pct": 1.91,
+      "status": "not-comparable",
+      "source_file": "I_transfer_gas.csv",
+      "note": ""
+    },
+    {
+      "metric_id": "I_owner_verify_gas",
+      "paper_value": 143000.0,
+      "measured_value": 70897.0,
+      "unit": "gas",
+      "delta_pct": -50.42,
+      "status": "not-comparable",
+      "source_file": "I_transfer_gas.csv",
+      "note": ""
+    },
+    {
+      "metric_id": "I_csp_update_gas",
+      "paper_value": 137000.0,
+      "measured_value": 70351.0,
+      "unit": "gas",
+      "delta_pct": -48.65,
+      "status": "not-comparable",
+      "source_file": "I_transfer_gas.csv",
+      "note": ""
+    },
+    {
+      "metric_id": "I_finalize_gas",
+      "paper_value": 48000.0,
+      "measured_value": 54700.0,
+      "unit": "gas",
+      "delta_pct": 13.96,
+      "status": "not-comparable",
+      "source_file": "I_transfer_gas.csv",
+      "note": ""
+    }
+  ],
+  "run_meta": {
+    "mode_meta": {
+      "chain_mode": "mock",
+      "paper_scale": true,
+      "comparable": true,
+      "name": "full"
+    },
+    "bench_runtime_meta": [
+      {
+        "chain_mode": "mock",
+        "chain_backend": "mock",
+        "pairing_backend": "paper_pbc",
+        "pairing_strict": true,
+        "paper_scale": false,
+        "comparable": false
+      },
+      {
+        "chain_mode": "mock",
+        "chain_backend": "mock",
+        "pairing_backend": "paper_pbc",
+        "pairing_strict": true,
+        "paper_scale": false,
+        "comparable": false
+      },
+      {
+        "chain_mode": "mock",
+        "chain_backend": "mock",
+        "pairing_backend": "paper_pbc",
+        "pairing_strict": true,
+        "paper_scale": false,
+        "comparable": false
+      },
+      {
+        "chain_mode": "mock",
+        "chain_backend": "mock",
+        "pairing_backend": "paper_pbc",
+        "pairing_strict": true,
+        "paper_scale": false,
+        "comparable": false
+      },
+      {
+        "chain_mode": "mock",
+        "chain_backend": "mock",
+        "pairing_backend": "paper_pbc",
+        "pairing_strict": true,
+        "paper_scale": false,
+        "comparable": false
+      },
+      {
+        "chain_mode": "mock",
+        "chain_backend": "mock",
+        "pairing_backend": "paper_pbc",
+        "pairing_strict": true,
+        "paper_scale": false,
+        "comparable": false
+      },
+      {
+        "chain_mode": "mock",
+        "chain_backend": "mock",
+        "pairing_backend": "paper_pbc",
+        "pairing_strict": true,
+        "paper_scale": false,
+        "comparable": false
+      }
+    ],
+    "comparable": false
+  }
+}

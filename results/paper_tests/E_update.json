@@ -1,0 +1,20 @@
+{
+  "name": "E_update",
+  "rows": [
+    {
+      "metric": "E",
+      "round": 1,
+      "num_updates": 1000,
+      "total_update_ms": 7146.6929,
+      "avg_update_ms": 7.1467
+    }
+  ],
+  "meta": {
+    "chain_mode": "mock",
+    "chain_backend": "mock",
+    "pairing_backend": "paper_pbc",
+    "pairing_strict": true,
+    "paper_scale": false,
+    "comparable": false
+  }
+}

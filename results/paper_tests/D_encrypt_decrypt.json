@@ -1,0 +1,41 @@
+{
+  "name": "D_encrypt_decrypt",
+  "rows": [
+    {
+      "metric": "D",
+      "private_ratio": 0.2,
+      "n_blocks": 5000,
+      "avg_encrypt_ms": 4768.9895,
+      "avg_decrypt_ms": 5589.4412
+    },
+    {
+      "metric": "D",
+      "private_ratio": 0.5,
+      "n_blocks": 5000,
+      "avg_encrypt_ms": 11543.5591,
+      "avg_decrypt_ms": 13852.0959
+    },
+    {
+      "metric": "D",
+      "private_ratio": 0.8,
+      "n_blocks": 5000,
+      "avg_encrypt_ms": 18470.5553,
+      "avg_decrypt_ms": 22323.7082
+    },
+    {
+      "metric": "D",
+      "private_ratio": 1.0,
+      "n_blocks": 5000,
+      "avg_encrypt_ms": 22988.7795,
+      "avg_decrypt_ms": 27765.1191
+    }
+  ],
+  "meta": {
+    "chain_mode": "mock",
+    "chain_backend": "mock",
+    "pairing_backend": "paper_pbc",
+    "pairing_strict": true,
+    "paper_scale": false,
+    "comparable": false
+  }
+}

@@ -1,0 +1,2 @@
+metric,file_blocks,private_ratio,challenge_blocks,file_tag_ms,encrypt_ms,prove_ms,verify_ms,second_upload_ms,duplicate_detected,verify_ok
+G,2000,0.5,460,8.4123,4513.8871,21.0232,1379.0053,4676.0276,True,True

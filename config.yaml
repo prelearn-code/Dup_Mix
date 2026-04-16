@@ -1,0 +1,5 @@
+block_size: 4096
+sectors_per_block: 128
+duplication_ratio: 0.75
+average_runs: 1000
+chain_id: 1337

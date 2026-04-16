@@ -1,0 +1,10 @@
+metric,phase,n_blocks,comm_bytes,challenge_blocks
+F,upload,1000,14624500,
+F,audit,,49616,300
+F,audit,,68401,460
+F,upload,3000,43873500,
+F,audit,,49789,300
+F,audit,,68701,460
+F,upload,5000,73122500,
+F,audit,,49852,300
+F,audit,,68757,460

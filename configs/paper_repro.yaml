@@ -1,0 +1,87 @@
+smoke:
+  _meta:
+    chain_mode: mock
+    paper_scale: false
+    comparable: false
+  a:
+    blocks: [100, 300]
+    repeats: 2
+    dup_ratio: 0.75
+    private_ratio: 0.5
+  b:
+    challenge_blocks: [50, 100]
+    repeats: 2
+    n_blocks: 300
+    dup_ratio: 0.75
+    private_ratio: 0.5
+  c:
+    challenge_blocks: [50, 100]
+    repeats: 2
+    n_blocks: 300
+    dup_ratio: 0.75
+    private_ratio: 0.5
+  d:
+    private_ratios: [0.2, 0.5, 0.8]
+    repeats: 2
+    n_blocks: 500
+    dup_ratio: 0.75
+  e:
+    updates: 50
+    repeats: 1
+    n_blocks: 500
+    dup_ratio: 0.75
+    private_ratio: 0.5
+  f:
+    blocks: [300]
+    challenge_blocks: [100, 200]
+    dup_ratio: 0.75
+    private_ratio: 0.5
+  g:
+    file_blocks: 500
+    private_ratio: 0.5
+    challenge_blocks: 200
+    dup_ratio: 0.75
+
+full:
+  _meta:
+    chain_mode: mock
+    paper_scale: true
+    comparable: true
+  a:
+    blocks: [1000, 3000, 5000, 8000, 10000]
+    repeats: 2
+    dup_ratio: 0.75
+    private_ratio: 0.5
+  b:
+    challenge_blocks: [300, 460]
+    repeats: 2
+    n_blocks: 1200
+    dup_ratio: 0.75
+    private_ratio: 0.5
+  c:
+    challenge_blocks: [300, 460]
+    repeats: 2
+    n_blocks: 1200
+    dup_ratio: 0.75
+    private_ratio: 0.5
+  d:
+    private_ratios: [0.2, 0.5, 0.8, 1.0]
+    repeats: 2
+    n_blocks: 5000
+    dup_ratio: 0.75
+  e:
+    updates: 1000
+    repeats: 1
+    n_blocks: 1200
+    dup_ratio: 0.75
+    private_ratio: 0.5
+  f:
+    blocks: [1000, 3000, 5000]
+    challenge_blocks: [300, 460]
+    dup_ratio: 0.75
+    private_ratio: 0.5
+  g:
+    file_blocks: 2000
+    private_ratio: 0.5
+    challenge_blocks: 460
+    dup_ratio: 0.75

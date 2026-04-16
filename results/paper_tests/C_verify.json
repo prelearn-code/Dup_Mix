@@ -1,0 +1,25 @@
+{
+  "name": "C_verify",
+  "rows": [
+    {
+      "metric": "C",
+      "challenge_blocks": 300,
+      "avg_verify_ms": 893.1476,
+      "verify_path": "local+mock"
+    },
+    {
+      "metric": "C",
+      "challenge_blocks": 460,
+      "avg_verify_ms": 1440.9984,
+      "verify_path": "local+mock"
+    }
+  ],
+  "meta": {
+    "chain_mode": "mock",
+    "chain_backend": "mock",
+    "pairing_backend": "paper_pbc",
+    "pairing_strict": true,
+    "paper_scale": false,
+    "comparable": false
+  }
+}
