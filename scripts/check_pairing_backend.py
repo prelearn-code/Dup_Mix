@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
@@ -11,8 +10,7 @@ from src.crypto import setup
 
 
 def main() -> None:
-    backend = os.getenv("DUPMIX_PAIRING_BACKEND", "auto")
-    params = setup(sectors_per_block=8, s=b"backend-check", pairing_backend=backend)  # type: ignore[arg-type]
+    params = setup(sectors_per_block=8, s=b"backend-check")
     print(f"pairing_backend={params.pairing_backend}")
     print(f"use_pbc={params.use_pbc}")
     print(f"pairing_strict={params.pairing_strict}")

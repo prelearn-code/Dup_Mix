@@ -16,9 +16,9 @@ class GlobalParams:
     generator: int
     r_values: List[int]
     use_pbc: bool = False
-    pairing_backend: str = "fallback"
+    pairing_backend: str = "paper_pbc"
     pairing_strict: bool = False
-    implementation_note: str = "Fallback pairing surrogate over secp256k1 scalar field."
+    implementation_note: str = "Strict paper PBC Type-A exponent representation."
 
 
 @dataclass

@@ -29,11 +29,18 @@ def _load_config(path: Path) -> Dict[str, Any]:
     return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
 
-def _run_one(mode_cfg: Dict[str, Any], selected_metrics: List[str]) -> None:
-    chain_mode = str(mode_cfg.get("_meta", {}).get("chain_mode", "mock")).lower()
+def _run_one(mode_cfg: Dict[str, Any], selected_metrics: List[str], chain_mode_override: str | None = None) -> None:
+    chain_mode = str(chain_mode_override or mode_cfg.get("_meta", {}).get("chain_mode", "mock")).lower()
+    if chain_mode not in {"mock", "real"}:
+        raise ValueError(f"Unsupported chain mode: {chain_mode!r}")
+    mode_cfg.setdefault("_meta", {})
+    mode_cfg["_meta"]["chain_mode"] = chain_mode
     os.environ["DUPMIX_CHAIN_MODE"] = chain_mode
     metric_set = {m.lower() for m in selected_metrics}
     run_all = "all" in metric_set
+    unknown_metrics = metric_set - {"a", "b", "c", "d", "e", "f", "g", "all"}
+    if unknown_metrics:
+        raise ValueError(f"Unsupported metric(s): {','.join(sorted(unknown_metrics))}")
     results = []
     if run_all or "a" in metric_set:
         a = mode_cfg["a"]
@@ -79,6 +86,7 @@ def main() -> None:
     parser.add_argument("--mode", choices=["smoke", "full"], default="smoke")
     parser.add_argument("--metrics", default="all", help="Comma-separated list from: a,b,c,d,e,f,g,all")
     parser.add_argument("--config", default=str(ROOT / "configs" / "paper_repro.yaml"))
+    parser.add_argument("--chain-mode", choices=["mock", "real"], help="Override chain_mode from the selected config mode.")
     args = parser.parse_args()
 
     cfg = _load_config(Path(args.config))
@@ -92,7 +100,7 @@ def main() -> None:
     mode_cfg = dict(cfg[args.mode])
     mode_cfg.setdefault("_meta", {})
     mode_cfg["_meta"]["name"] = args.mode
-    _run_one(mode_cfg, selected_metrics)
+    _run_one(mode_cfg, selected_metrics, args.chain_mode)
     print("[paper_repro] finished", flush=True)
 
 

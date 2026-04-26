@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local environment
+.env
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.so
+*.o
+
+# Local Solidity/compiler caches
+.solcx/
+
+# Native test binaries
+test_pbc
+test_pbc.c
+pypbc
+
+# Generated experiment outputs. Recreate them with scripts/paper_tests/ and scripts/flows/.
+results/
+
+# Local Client/CSP databases. Keep directory placeholders only.
+data/client_files/*
+data/client_db/*
+data/csp_db/*
+!data/client_files/.gitkeep
+!data/client_db/.gitkeep
+!data/csp_db/.gitkeep

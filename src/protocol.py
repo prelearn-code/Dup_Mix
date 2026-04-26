@@ -16,17 +16,17 @@ from .utils import compressed_public_key_from_private, flatten_block, sha256_hex
 def _normalize_private_key(private_key: str) -> bytes:
     return bytes.fromhex(private_key[2:] if private_key.startswith("0x") else private_key)
 
-
+# 权限检查：确保用户是文件当前所有者，才能执行动态插入/修改/删除等操作
 def _owner_guard(user: UserState, csp_state: CSPState, file_id: str) -> None:
     if csp_state.ownership.get(file_id) != user.address:
         raise PermissionError("User is not the current owner of the file.")
 
-
+# 计算用户公钥：优先使用 user.public_key，兼容性考虑 fallback 到 private_key 计算压缩公钥
 def _resolve_public_key(user: UserState) -> bytes:
     public_key_hex = user.public_key or compressed_public_key_from_private(user.private_key)
     return bytes.fromhex(public_key_hex[2:] if public_key_hex.startswith("0x") else public_key_hex)
 
-
+# 计算块内每个扇区的 H1 值，作为后续 tag/authenticator 计算的基础
 def _compute_sector_values(engine: CryptoEngine, block: Sequence[bytes]) -> List[int]:
     return [engine.H1(sector) for sector in block]
 
@@ -55,7 +55,7 @@ def _build_file_state(
         metadata=metadata,
     )
 
-
+# 准备块级记录的公共函数，包含 tag/sectors/sector_values/is_public/owners/sector_keys 等信息，供上传和动态插入流程使用
 def _prepare_block_record(engine: CryptoEngine, block: Sequence[bytes], is_public: bool, tag: int, sector_keys: Sequence[int]) -> Dict[str, Any]:
     return {
         "tag": f"{tag:064x}",
@@ -66,7 +66,7 @@ def _prepare_block_record(engine: CryptoEngine, block: Sequence[bytes], is_publi
         "sector_keys": list(sector_keys),
     }
 
-
+# 上传与去重流程：用户生成加密块和标签，CSP 验证身份后进行文件级和块级去重，生成认证器并存储元数据，最后链上记录 upload 事件。
 def upload_and_dedup_protocol(
     owner: UserState,
     file_bytes: bytes,
@@ -76,6 +76,11 @@ def upload_and_dedup_protocol(
     public_block_indices: Optional[Sequence[int]] = None,
     gamma: int = 19,
 ) -> Dict[str, Any]:
+    """上传与去重流程。
+
+    对应论文流程：用户 KeyGen/Encrypt/TagGen -> 生成 UID/W -> CSP 验证身份 ->
+    文件级/块级去重 -> AuthGen/认证器验证 -> CSP 存储元数据 -> 链上记录 upload。
+    """
     public_block_indices = list(public_block_indices or [])
     blocks = split_file_into_blocks_and_sectors(
         data=file_bytes,
@@ -164,6 +169,7 @@ def audit_req(
     requester: str = "auditor",
     z_value: Optional[int] = None,
 ) -> Dict[str, Any]:
+    """AuditReq 流程：生成 Chal=(z, theta1, theta2)，并把 challenge 请求写入链状态。"""
     z_input = n if z_value is None else z_value
     z_value = min(max(1, int(z_input)), n)
     theta1 = engine.H1(f"theta1|{req}|{uuid4().hex}".encode())
@@ -175,6 +181,11 @@ def audit_req(
 
 
 def proof_gen(challenge: Dict[str, Any], file_state: FileState, csp_state: CSPState, engine: CryptoEngine) -> Dict[str, Any]:
+    """ProofGen 流程。
+
+    对应论文公式：x_i=f1(theta1,i)，v_i=f2(theta2,i)，
+    P_j=sum_i v_i*c_{x_i,j}，sigma_c=prod_i sigma_{x_i}^{v_i}。
+    """
     n_blocks = len(file_state.block_ids)
     indices = [engine.f1(i, challenge["theta1"], n_blocks) for i in range(challenge["z"])]
     coeffs = [engine.f2(i, challenge["theta2"]) for i in range(challenge["z"])]
@@ -182,15 +193,20 @@ def proof_gen(challenge: Dict[str, Any], file_state: FileState, csp_state: CSPSt
     P_values = [0 for _ in range(sector_count)]
     sigma_store: Dict[int, int] = {}
     y_store: Dict[int, int] = {}
+    base_store: Dict[int, int] = {}
     for pos, (block_index, coeff) in enumerate(zip(indices, coeffs)):
         block_id = file_state.block_ids[block_index]
         block = csp_state.blocks[block_id]
         sigma_store[pos] = csp_state.authenticators[block_id]["sigma"]
         y_store[pos] = csp_state.authenticators[block_id]["Y"]
+        base = engine.H2(engine.s_param + int.to_bytes(int(file_state.block_tags[block_index], 16), 32, "big"))
+        for r_j, value in zip(engine.r_values, block["sector_values"]):
+            base = (base + (r_j * value)) % engine.q
+        base_store[pos] = base
         for sector_idx, value in enumerate(block["sector_values"]):
             P_values[sector_idx] = (P_values[sector_idx] + coeff * value) % engine.q
     sigma_c = engine.aggregate_authenticator(range(len(indices)), coeffs, sigma_store)
-    y_agg = sum((coeff * y_store[idx]) % engine.q for idx, coeff in enumerate(coeffs)) % engine.q
+    pairing_rhs = sum((coeff * engine.pairing_exponent(base_store[idx], y_store[idx])) % engine.q for idx, coeff in enumerate(coeffs)) % engine.q
     # Deterministic payload and checksum used by real-chain benchmark path.
     payload_lines = [
         challenge["challenge_id"],
@@ -198,7 +214,7 @@ def proof_gen(challenge: Dict[str, Any], file_state: FileState, csp_state: CSPSt
         ",".join(str(c) for c in coeffs),
         ",".join(str(v) for v in P_values),
         str(sigma_c),
-        str(y_agg),
+        str(pairing_rhs),
     ]
     payload = "|".join(payload_lines).encode()
     checksum = sum((idx + 1) * b for idx, b in enumerate(payload)) % engine.q
@@ -208,7 +224,7 @@ def proof_gen(challenge: Dict[str, Any], file_state: FileState, csp_state: CSPSt
         "coeffs": coeffs,
         "P": P_values,
         "sigma_c": sigma_c,
-        "Y_agg": y_agg,
+        "pairing_rhs": pairing_rhs,
         "proof_payload_hex": payload.hex(),
         "proof_digest_hex": sha256(payload).hexdigest(),
         "proof_checksum": checksum,
@@ -224,30 +240,38 @@ def verify_proof_protocol(
     chain_state: Any,
     engine: CryptoEngine,
 ) -> bool:
+    """VerifyProof 流程。
+
+    重算 x_i/v_i/P_j/sigma_c，并验证论文审计 pairing 公式：
+    e(sigma_c,g)==prod_i e(H2(s||tg_i)*prod_j r_j^{c_i,j},Y_i)^{v_i}。
+    """
     expected_indices = [engine.f1(i, challenge["theta1"], len(file_state.block_ids)) for i in range(challenge["z"])]
     expected_coeffs = [engine.f2(i, challenge["theta2"]) for i in range(challenge["z"])]
     expected_P = [0 for _ in range(engine.params.sectors_per_block)]
     sigma_store: Dict[int, int] = {}
+    base_values: List[int] = []
+    y_values: List[int] = []
+    pairing_rhs = 0
     for pos, (block_index, coeff) in enumerate(zip(expected_indices, expected_coeffs)):
         block_id = file_state.block_ids[block_index]
         block = csp_state.blocks[block_id]
         sigma_i = csp_state.authenticators[block_id]["sigma"]
-        
-        # Paper-style individual verification: 
-        # Perform 2 pairing operations per challenged block to match O(z) linear growth.
-        _ = engine.pairing(sigma_i, engine.g)
-        _ = engine.pairing(1, 1) # Balancing factor to match paper's heavy verification cost
-        
+        Y_i = csp_state.authenticators[block_id]["Y"]
+        base_i = engine.H2(engine.s_param + int.to_bytes(int(file_state.block_tags[block_index], 16), 32, "big"))
+        for r_j, value in zip(engine.r_values, block["sector_values"]):
+            base_i = (base_i + (r_j * value)) % engine.q
+        base_values.append(base_i)
+        y_values.append(Y_i)
+        pairing_rhs = (pairing_rhs + (coeff * engine.pairing_exponent(base_i, Y_i))) % engine.q
         for sector_idx, value in enumerate(block["sector_values"]):
             expected_P[sector_idx] = (expected_P[sector_idx] + coeff * value) % engine.q
         sigma_store[pos] = sigma_i
 
     expected_sigma = engine.aggregate_authenticator(range(len(expected_indices)), expected_coeffs, sigma_store)
     local_valid = proof["indices"] == expected_indices and proof["coeffs"] == expected_coeffs and proof["P"] == expected_P
-    # Final check on aggregated proof
-    lhs = engine.pairing(proof["sigma_c"], engine.g)
-    rhs = engine.pairing(expected_sigma, engine.g)
-    local_valid = local_valid and (lhs == rhs)
+    local_valid = local_valid and engine.pairing_equal(proof["sigma_c"], engine.g, expected_sigma, engine.g)
+    local_valid = local_valid and engine.pairing_product_equal(proof["sigma_c"], base_values, y_values, expected_coeffs)
+    local_valid = local_valid and (proof.get("pairing_rhs") == pairing_rhs)
     chain_result = submit_proof_result(
         chain_state,
         challenge["challenge_id"],
@@ -264,6 +288,11 @@ def verify_proof_protocol(
 
 
 def retrieve_protocol(user: UserState, file_id: str, csp_state: CSPState, engine: CryptoEngine, UID: bytes, W: bytes) -> bytes:
+    """数据取回流程。
+
+    CSP 先验证 owner 和 UID/W；用户解封装 {k_i,j} 后，对 private sector 执行
+    m_i,j=H3(k_i,j) xor c_i,j，并按原始 file_size 去除 padding。
+    """
     file_state = csp_state.files[file_id]
     _owner_guard(user, csp_state, file_id)
     t_int = int(file_state.t, 16)
@@ -297,6 +326,7 @@ def insert_protocol(
     index: Optional[int] = None,
     is_public: bool = False,
 ) -> Dict[str, Any]:
+    """动态插入流程：生成新块 tag/authenticator，插入 MHT/AVT，并链上记录新 root。"""
     _owner_guard(user, csp_state, file_id)
     file_state = csp_state.files[file_id]
     gamma = user.local_files[file_id]["gamma"]
@@ -343,6 +373,7 @@ def modify_protocol(
     engine: CryptoEngine,
     is_public: bool = False,
 ) -> Dict[str, Any]:
+    """动态修改流程：替换目标块、重新生成 tag/authenticator，更新 MHT/AVT root 并上链。"""
     _owner_guard(user, csp_state, file_id)
     file_state = csp_state.files[file_id]
     gamma = user.local_files[file_id]["gamma"]
@@ -379,6 +410,7 @@ def modify_protocol(
 
 
 def delete_protocol(user: UserState, file_id: str, block_index: int, csp_state: CSPState, chain_state: Any, engine: CryptoEngine) -> Dict[str, Any]:
+    """动态删除流程：删除目标块 tag，更新 MHT/AVT root，并链上记录删除操作。"""
     _owner_guard(user, csp_state, file_id)
     file_state = csp_state.files[file_id]
     block_id = file_state.block_ids.pop(block_index)
@@ -395,6 +427,11 @@ def delete_protocol(user: UserState, file_id: str, block_index: int, csp_state: 
 
 
 def ownership_transfer_protocol(from_user: UserState, to_user: UserState, file_id: str, csp_state: CSPState, chain_state: Any, engine: CryptoEngine) -> Dict[str, Any]:
+    """权限转让流程。
+
+    对应论文 transfer 阶段：买方请求转让，旧 owner 通过取回证明可访问，
+    CSP 将 private block keys 重新封装给新 owner，更新 ownership，新 owner 取回验证后链上结算。
+    """
     _owner_guard(from_user, csp_state, file_id)
     file_state = csp_state.files[file_id]
     request_transfer(chain_state, file_id, from_user.address, to_user.address)

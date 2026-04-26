@@ -27,6 +27,19 @@ def test_mht_empty_and_updates():
     assert deleted["tags"] == ["z", "x", "c"]
 
 
+def test_mht_delete_promotes_sibling_like_paper_figure():
+    tree, _ = build_improved_mht(["h1", "h2", "h3", "h4"])
+    deleted, _ = delete_block_mht(tree, 0)
+
+    promoted = deleted["node"]["left"]
+    assert deleted["tags"] == ["h2", "h3", "h4"]
+    assert promoted["tag"] == "h2"
+    assert promoted["h"] == "h2"
+    assert promoted["lN"] == 1
+    assert promoted["p"] == 2
+    assert deleted["node"]["lN"] == 3
+
+
 def test_split_blocks_padding_and_flatten():
     block_size = 16
     sectors_per_block = 4

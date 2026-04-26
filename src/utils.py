@@ -99,7 +99,7 @@ def pad_last_block(block: bytes, block_size: int) -> bytes:
         return block
     return block + (b"\x00" * (block_size - len(block)))
 
-
+# 按照4kb/128个扇区划分文件数据，最后一个块不足4kb时补零
 def split_file_into_blocks_and_sectors(
     file_path: str | None = None,
     block_size: int = 4096,
@@ -123,15 +123,15 @@ def split_file_into_blocks_and_sectors(
         blocks.append(chunk_bytes(b"\x00" * block_size, sector_size))
     return blocks
 
-
+# 为了配对运算中对块数据的哈希计算，扇区内数据需要先合并成一个连续的字节串
 def flatten_block(block: Sequence[bytes]) -> bytes:
     return b"".join(block)
 
-
+# 为了配对运算中对块数据的哈希计算，扇区内数据需要先合并成一个连续的字节串
 def flatten_blocks(blocks: Iterable[Sequence[bytes]]) -> bytes:
     return b"".join(flatten_block(block) for block in blocks)
 
-
+# 为了配对运算中对块数据的哈希计算，扇区内数据需要先合并成一个连续的字节串
 def compressed_public_key_from_private(private_key_hex: str) -> str:
     from coincurve import PrivateKey
 

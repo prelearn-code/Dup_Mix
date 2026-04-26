@@ -1,3 +1,0 @@
-metric,challenge_blocks,avg_verify_ms,verify_path
-C,300,893.1476,local+mock
-C,460,1440.9984,local+mock

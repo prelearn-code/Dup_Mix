@@ -12,6 +12,22 @@ from scripts.paper_tests.common import ensure_results_dir, write_csv, write_json
 from scripts.paper_tests.web3_gas_utils import connect_web3, deploy_audit_system, send_tx_and_gas
 
 
+def _bn254_pairing_fixture() -> tuple[list[int], list[int], list[int]]:
+    from py_ecc.optimized_bn128 import G1, G2, curve_order, multiply, normalize
+
+    base_scalar = 123456789
+    y_scalar = 987654321
+    sigma_scalar = (base_scalar * y_scalar) % curve_order
+    sigma = normalize(multiply(G1, sigma_scalar))
+    base = normalize(multiply(G1, base_scalar))
+    y = normalize(multiply(G2, y_scalar))
+    sigma_c = [int(sigma[0]), int(sigma[1])]
+    base_agg = [int(base[0]), int(base[1])]
+    # Solidity's bn254 precompile expects Fp2 coordinates as [imaginary, real].
+    y_agg = [int(y[0].coeffs[1]), int(y[0].coeffs[0]), int(y[1].coeffs[1]), int(y[1].coeffs[0])]
+    return sigma_c, base_agg, y_agg
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Metric H: real-chain gas for audit phases")
     parser.add_argument("--fee2", type=int, default=7)
@@ -48,7 +64,7 @@ def main() -> None:
     )
 
     print("[H] measuring prove phase gas...", flush=True)
-    proof_blob = (b"paper-proof-payload|" * 48)[:1024]
+    proof_blob = (b"bn254-paper-structure-proof|" * 48)[:1024]
     proof_checksum = sum((idx + 1) * b for idx, b in enumerate(proof_blob))
     prove_tx = send_tx_and_gas(
         w3,
@@ -56,17 +72,19 @@ def main() -> None:
         csp,
     )
 
-    print("[H] measuring verify phase gas...", flush=True)
+    print("[H] measuring BN254 pairing verify phase gas...", flush=True)
+    sigma_c, base_agg, y_agg = _bn254_pairing_fixture()
     verify_tx = send_tx_and_gas(
         w3,
-        contract.functions.benchmarkVerifyProofAndSettle(
+        contract.functions.verifyBn254ProofAndSettle(
             challenge_id,
             owner,
             csp,
-            proof_checksum,
+            sigma_c,
+            base_agg,
+            y_agg,
             args.fee2,
             args.fee1,
-            proof_blob,
         ),
         requester,
     )
@@ -74,6 +92,7 @@ def main() -> None:
     row = {
         "metric": "H",
         "contract": contract.address,
+        "chain_pairing_backend": "BN254_PRECOMPILE",
         "challenge_gas": challenge_tx["gas_used"],
         "prove_gas": prove_tx["gas_used"],
         "verify_gas": verify_tx["gas_used"],

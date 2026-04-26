@@ -44,13 +44,10 @@ def build_user(address: str, private_key: str, uid: str) -> UserState:
 
 
 def build_runtime(sectors_per_block: int = 128, chain_mode: str | None = None) -> Runtime:
-    backend_raw = os.getenv("DUPMIX_PAIRING_BACKEND", "auto").strip().lower()
-    if backend_raw not in {"auto", "paper_pbc", "fallback"}:
-        backend_raw = "auto"
     chain_mode_value = (chain_mode or os.getenv("DUPMIX_CHAIN_MODE", "mock")).strip().lower()
     if chain_mode_value not in {"mock", "real"}:
         chain_mode_value = "mock"
-    params = setup(sectors_per_block=sectors_per_block, s=b"paper-benchmark", pairing_backend=backend_raw)
+    params = setup(sectors_per_block=sectors_per_block, s=b"paper-benchmark")
     engine = CryptoEngine(params)
     print(
         f"[runtime] pairing_backend={params.pairing_backend} use_pbc={params.use_pbc} "
@@ -116,8 +113,11 @@ def _runtime_meta(rt: Runtime) -> Dict[str, Any]:
         "chain_backend": rt.chain.backend,
         "pairing_backend": rt.engine.params.pairing_backend,
         "pairing_strict": rt.engine.params.pairing_strict,
-        "paper_scale": rt.chain_mode == "real",
-        "comparable": rt.chain_mode == "real" and rt.engine.params.pairing_strict,
+        "paper_pairing_backend": "PBC_TYPE_A_NATIVE_PAIRING_APPLY",
+        "sector_encryption": "H3_XOR",
+        "proof_model": "paper_pbc_local_and_bn254_chain_gas",
+        "paper_scale": True,
+        "comparable": False,
     }
 
 
@@ -263,13 +263,14 @@ def bench_d_encrypt_decrypt(private_ratios: Sequence[float], repeats: int, n_blo
         enc_samples: List[float] = []
         dec_samples: List[float] = []
         public_idx = public_indices(n_blocks, ratio)
+        public_idx_set = set(public_idx)
         for _ in range(repeats):
             t0 = now_ms()
             encrypted_blocks, _ = rt.engine.encrypt_blocks(blocks, sector_keys, public_idx, pub_key)
             enc_samples.append(now_ms() - t0)
             t1 = now_ms()
             for i, block in enumerate(encrypted_blocks):
-                if i in set(public_idx):
+                if i in public_idx_set:
                     continue
                 for key, cipher_sector in zip(sector_keys[i], block):
                     rt.engine.s_decrypt(key, cipher_sector)

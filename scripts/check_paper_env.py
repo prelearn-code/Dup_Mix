@@ -18,7 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 PBC_CANDIDATES = ("libpbc.so", "/usr/local/lib/libpbc.so")
 GMP_CANDIDATES = ("libgmp.so", "/usr/local/lib/libgmp.so")
-PY_MODULES = ("web3", "solcx", "Crypto", "coincurve", "yaml", "dotenv", "gmpy2", "pypbc", "py_ecc")
+PY_MODULES = ("web3", "solcx", "coincurve", "yaml", "dotenv", "py_ecc")
 
 
 def _ok(flag: bool) -> str:
@@ -95,8 +95,7 @@ def _collect() -> Dict[str, object]:
             python_ok,
             module_status.get("web3", False),
             module_status.get("solcx", False),
-            module_status.get("gmpy2", False),
-            (module_status.get("pypbc", False) or module_status.get("py_ecc", False)),
+            module_status.get("py_ecc", False),
             pbc_ok,
             gmp_ok,
             ganache_cmd is not None,
@@ -123,23 +122,15 @@ def _collect() -> Dict[str, object]:
 
 
 def _check_pbc_property() -> Tuple[bool, str]:
-    """Optional quick sanity check placeholder.
-
-    A real bilinear property check requires a concrete PBC binding in use.
-    We expose this hook so the future PBC backend can wire a strict check.
-    """
     try:
-        backend = os.getenv("DUPMIX_PAIRING_BACKEND", "fallback").strip().lower()
-        if backend != "paper_pbc":
-            return (False, "Set DUPMIX_PAIRING_BACKEND=paper_pbc first.")
         from src.crypto import setup
 
-        params = setup(sectors_per_block=8, s=b"pairing-check", pairing_backend="paper_pbc")
+        params = setup(sectors_per_block=8, s=b"pairing-check")
         if params.pairing_backend != "paper_pbc" or not params.use_pbc:
             return (False, "paper_pbc backend request did not activate.")
         if not params.pairing_strict:
-            return (False, "paper_pbc active, but strict Python pairing binding is unavailable.")
-        return (True, "paper_pbc strict backend is active.")
+            return (False, "paper_pbc active, but strict native pairing verification is unavailable.")
+        return (True, "paper_pbc strict Type-A native C/PBC pairing_apply backend is active.")
     except Exception as exc:
         return (False, f"Error: {exc}")
 
@@ -193,7 +184,7 @@ def main() -> None:
         print("All strict paper conditions are available.")
     else:
         print("Strict paper conditions are not fully met. You can still run approximate reproduction.")
-        print("Missing pieces are typically: PBC/GMP native pairing backend and real chain/gas conditions.")
+        print("Missing pieces are typically: PBC/GMP native libraries, Ganache RPC, or local solc.")
 
 
 if __name__ == "__main__":

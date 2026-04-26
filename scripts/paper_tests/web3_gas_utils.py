@@ -59,6 +59,8 @@ def send_tx_and_gas(w3: Web3, tx_callable: Any, sender: str, max_retries: int = 
         try:
             tx_hash = tx_callable.transact({"from": sender, "nonce": nonce, "gas": gas_limit})
             receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=receipt_timeout)
+            if int(receipt.status) != 1:
+                raise RuntimeError(f"Transaction reverted: {tx_hash.hex()} gasUsed={int(receipt.gasUsed)}")
             return {
                 "tx_hash": tx_hash.hex(),
                 "gas_used": int(receipt.gasUsed),

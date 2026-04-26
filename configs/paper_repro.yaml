@@ -46,7 +46,7 @@ full:
   _meta:
     chain_mode: mock
     paper_scale: true
-    comparable: true
+    comparable: false
   a:
     blocks: [1000, 3000, 5000, 8000, 10000]
     repeats: 2

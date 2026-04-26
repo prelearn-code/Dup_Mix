@@ -183,22 +183,16 @@ def submit_proof_result(
     proof_checksum: int = 0,
 ) -> Dict[str, Any]:
     if chain_state.backend == "web3":
-        proof_payload = bytes.fromhex(proof_payload_hex) if proof_payload_hex else b""
-        tx_prove = _send_web3_tx(
+        _ = proof_payload_hex, proof_checksum
+        tx = _send_web3_tx(
             chain_state,
-            chain_state.contract.functions.benchmarkSubmitProof(challenge_id, proof_payload, int(proof_checksum)),
-            csp_address,
-        )
-        tx_verify = _send_web3_tx(
-            chain_state,
-            chain_state.contract.functions.benchmarkVerifyProofAndSettle(
+            chain_state.contract.functions.submitProofResult(
                 challenge_id,
                 owner,
                 csp_address,
-                int(proof_checksum),
+                is_valid,
                 fee2,
                 fee1,
-                proof_payload,
             ),
             owner,
         )
@@ -207,12 +201,11 @@ def submit_proof_result(
             "challenge_id": challenge_id,
             "file_id": file_id,
             "is_valid": bool(audit[4]),
-            "block_number": tx_verify["block_number"],
-            "prove_tx_hash": tx_prove["tx_hash"],
-            "verify_tx_hash": tx_verify["tx_hash"],
-            "prove_gas_used": tx_prove["gas_used"],
-            "verify_gas_used": tx_verify["gas_used"],
-            "status": tx_verify["status"],
+            "block_number": tx["block_number"],
+            "tx_hash": tx["tx_hash"],
+            "gas_used": tx["gas_used"],
+            "status": tx["status"],
+            "verification_path": "local_pbc_type_a_then_onchain_settlement",
         }
         chain_state.proof_results[challenge_id] = result
         return result

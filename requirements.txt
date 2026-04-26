@@ -1,9 +1,7 @@
 web3
 py-solc-x
 eth-account
-pycryptodome
 coincurve
 python-dotenv
 PyYAML
 pytest
-gmpy2

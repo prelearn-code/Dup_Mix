@@ -21,7 +21,7 @@ fi
 if ldconfig -p | grep -q libpbc.so; then
   echo "libpbc.so found"
 else
-  echo "libpbc.so missing, runtime will use arithmetic fallback"
+  echo "libpbc.so missing; strict paper reproduction will fail"
 fi
 
 echo "Ganache expected at http://127.0.0.1:7545 (chain id 1337)"
