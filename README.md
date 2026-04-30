@@ -17,6 +17,8 @@
 | `contracts/AuditSystem.sol` | 上传、审计、更新、转让记录，以及 BN254 pairing gas 路径 |
 | `scripts/flows/` | 面向单流程测试的集成脚本 |
 | `scripts/paper_tests/` | A-I 实验指标脚本与报告生成 |
+| `scripts/demo_server.py` | 前端演示控制台 API，连接 Ganache 并读写 Client/CSP 本地数据库 |
+| `frontend/src/` | React/Vite 单页演示控制台，展示 Client、CSP/HVT 和链上区块信息 |
 | `PROJECT_REPRODUCTION_MAPPING.md` | 参数、函数、流程、实验指标与本地链账户映射说明 |
 
 ## 安装与环境检查
@@ -24,6 +26,7 @@
 ```bash
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
+npm install
 ```
 
 检查本地依赖、PBC/GMP、Ganache、solc：
@@ -56,6 +59,66 @@ ganache \
   --server.port 7545 \
   --wallet.totalAccounts 10
 ```
+
+## 前端演示控制台
+
+前端演示控制台把 Client 文件库、CSP 本地数据库/HVT 树和 Ganache 区块链监控放在同一页面。页面直接读取 `data/client_files/` 作为待上传文件库，并通过本地 API 调用项目已有协议代码完成上传、去重、审计、动态更新、取回和权限转让。
+
+首次运行先安装依赖并生成可上传文件：
+
+```bash
+python3 -m venv .venv
+./.venv/bin/pip install -r requirements.txt
+npm install
+./.venv/bin/python scripts/generate_experiment_files.py
+```
+
+启动演示需要三个终端。
+
+终端 1：启动 Ganache：
+
+```bash
+set -a
+source .env
+set +a
+
+ganache \
+  --wallet.mnemonic "$GANACHE_MNEMONIC" \
+  --chain.chainId "$GANACHE_CHAIN_ID" \
+  --chain.hardfork shanghai \
+  --server.host 127.0.0.1 \
+  --server.port 7545 \
+  --wallet.totalAccounts 10
+```
+
+终端 2：启动演示 API：
+
+```bash
+GANACHE_RPC_URL=http://127.0.0.1:7545 ./.venv/bin/python scripts/demo_server.py
+```
+
+终端 3：启动前端：
+
+```bash
+npm run dev -- --host 127.0.0.1
+```
+
+打开：
+
+```text
+http://127.0.0.1:5173/
+```
+
+页面功能：
+
+- 从 `data/client_files/` 下拉选择待上传文件。
+- 对库中文件执行文件级/块级去重预检，预检结果会固定展示，手动关闭前不会消失。
+- 上传文件并写入 `data/client_db/`、`data/csp_db/`，同时提交 Ganache 合约交易。
+- 选择已上传文件后展示 CSP 文件元数据、完整区块列表和可点击展开的模块化 HVT/MHT 二叉树。
+- 触发审计请求、CSP proof、链下 PBC 验证和链上结算。
+- 执行 insert/modify/delete 动态更新，展示旧 root、新 root 和链上 `recordUpdate` 交易。
+- 执行取回和权限转让，展示 Client/CSP ownership 与链上 transfer 交易。
+- 监控 Ganache 最新区块、合约交易、gas、tx hash 和流程详情。
 
 ## 单流程集成脚本
 
@@ -288,13 +351,13 @@ GANACHE_RPC_URL=http://127.0.0.1:7545 ./.venv/bin/python scripts/paper_tests/tes
 
 ## 论文实验脚本
 
-快速 smoke：
+快速 smoke。默认连接 `.env` / `GANACHE_RPC_URL` 指向的本地 Ganache，并部署真实合约：
 
 ```bash
 ./.venv/bin/python scripts/paper_tests/run_paper_repro.py --mode smoke --metrics all
 ```
 
-论文规模 A-G：
+论文规模 A-G。运行前需先启动 Ganache：
 
 ```bash
 ./.venv/bin/python scripts/paper_tests/run_paper_repro.py --mode full --metrics all
@@ -359,4 +422,4 @@ GANACHE_RPC_URL=http://127.0.0.1:7545 ./.venv/bin/python scripts/paper_tests/tes
 - 链下群元素仍以 PBC Type-A 群阶指数表示，等式验证调用本地 C/PBC `pairing_apply` 比较真实 `GT` 元素。
 - 主流程审计验证不在合约中重算论文 PBC Type-A 公式；合约 `submitProofResult()` 只记录链下验证结果并结算。
 - 链上 pairing gas 使用 BN254 precompile，对应实现为 `contracts/AuditSystem.sol::verifyBn254ProofAndSettle()`，验证公式形态为 `e(-sigmaC,P2) * e(baseAgg,yAgg) == 1`。
-- A-G 默认使用内存链统计链下协议开销；H/I 使用 Ganache 真实交易 receipt 统计 gas。
+- A-G/H/I 默认使用 Ganache 真实交易和 receipt；如只需快速本地调试，可对 A-G 显式传入 `--chain-mode mock`。

@@ -19,7 +19,7 @@ from src.protocol import (
     upload_and_dedup_protocol,
     verify_proof_protocol,
 )
-from src.utils import compressed_public_key_from_private, split_file_into_blocks_and_sectors
+from src.utils import compressed_public_key_from_private, load_environment, split_file_into_blocks_and_sectors
 
 from .common import avg_ms, ensure_results_dir, flatten, now_ms, write_csv, write_json
 
@@ -43,10 +43,19 @@ def build_user(address: str, private_key: str, uid: str) -> UserState:
     )
 
 
+def _env(name: str, default: str | None = None, required: bool = False) -> str:
+    value = os.getenv(name, default or "")
+    if required and not value:
+        raise RuntimeError(f"Missing required environment value: {name}")
+    return value
+
+
 def build_runtime(sectors_per_block: int = 128, chain_mode: str | None = None) -> Runtime:
+    load_environment()
     chain_mode_value = (chain_mode or os.getenv("DUPMIX_CHAIN_MODE", "mock")).strip().lower()
     if chain_mode_value not in {"mock", "real"}:
         chain_mode_value = "mock"
+    require_env = chain_mode_value == "real"
     params = setup(sectors_per_block=sectors_per_block, s=b"paper-benchmark")
     engine = CryptoEngine(params)
     print(
@@ -56,25 +65,25 @@ def build_runtime(sectors_per_block: int = 128, chain_mode: str | None = None) -
     )
     chain = deploy_contract(
         connect_chain(
-            chain_id=1337,
+            chain_id=int(_env("GANACHE_CHAIN_ID", "1337")),
             force_mock=(chain_mode_value == "mock"),
             require_real=(chain_mode_value == "real"),
         ),
         str(ROOT / "contracts" / "AuditSystem.sol"),
     )
     csp = CSPState(
-        address="0x7021Fb52487AC1c1733cC47A846dB474B25D01Ab",
-        private_key="0x61cabe658a8c206a440bfb65641c9a8a76fcd3915c9e9064fc4763b9e2c4ea83",
+        address=_env("CSP_ADDRESS", "0x7021Fb52487AC1c1733cC47A846dB474B25D01Ab", required=require_env),
+        private_key=_env("CSP_PRIVATE_KEY", "0x61cabe658a8c206a440bfb65641c9a8a76fcd3915c9e9064fc4763b9e2c4ea83", required=require_env),
         storage_capacity=10**9,
     )
     user1 = build_user(
-        "0x24291Ea0B8aB706e1a576beBC869A2b63072f265",
-        "0x308539265331010d37c2e16d3b27fcc6a71dff6ffcb26175d4fc2af0e7b36dd8",
+        _env("USER1_ADDRESS", "0x24291Ea0B8aB706e1a576beBC869A2b63072f265", required=require_env),
+        _env("USER1_PRIVATE_KEY", "0x308539265331010d37c2e16d3b27fcc6a71dff6ffcb26175d4fc2af0e7b36dd8", required=require_env),
         "bench-user-1",
     )
     user2 = build_user(
-        "0x2ad9a1698a5309dB005cea681150362Ab99Dc1B3",
-        "0x19d737f6b2ac3b146ff985de0dded5b5d11b694f26bb0dd92b0f75c88ad04897",
+        _env("USER2_ADDRESS", "0x2ad9a1698a5309dB005cea681150362Ab99Dc1B3", required=require_env),
+        _env("USER2_PRIVATE_KEY", "0x19d737f6b2ac3b146ff985de0dded5b5d11b694f26bb0dd92b0f75c88ad04897", required=require_env),
         "bench-user-2",
     )
     return Runtime(engine=engine, chain=chain, csp=csp, user1=user1, user2=user2, chain_mode=chain_mode_value)

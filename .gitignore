@@ -17,6 +17,7 @@ env/
 # Build artifacts
 build/
 dist/
+node_modules/
 *.egg-info/
 *.so
 *.o

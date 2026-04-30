@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import sys
 from typing import Any, Dict, List, Sequence, Tuple
 
 
@@ -53,6 +54,7 @@ def _collect_levels(root: Dict[str, Any]) -> List[List[Dict[str, Any]]]:
 
 
 def _finalize_tree(root: Dict[str, Any], tags: Sequence[str]) -> Tuple[Dict[str, Any], str]:
+    sys.setrecursionlimit(max(sys.getrecursionlimit(), (len(tags) * 2) + 1000))
     root["p"] = 0
     root = _refresh_node(root)
     tree = {"levels": _collect_levels(root), "root": root["h"], "tags": list(tags), "node": root}

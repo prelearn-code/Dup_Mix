@@ -359,8 +359,8 @@ def insert_protocol(
     file_state.metadata["tree"] = tree
     file_state.mht_root = root
     file_state.metadata["mht_root"] = root
-    record_update(chain_state, file_id, root, "insert")
-    return {"file_id": file_id, "root": root, "op": "insert"}
+    chain_update = record_update(chain_state, file_id, root, "insert")
+    return {"file_id": file_id, "root": root, "op": "insert", "chain_update": chain_update}
 
 
 def modify_protocol(
@@ -405,8 +405,8 @@ def modify_protocol(
     file_state.metadata["tree"] = tree
     file_state.mht_root = root
     file_state.metadata["mht_root"] = root
-    record_update(chain_state, file_id, root, "modify")
-    return {"file_id": file_id, "root": root, "op": "modify"}
+    chain_update = record_update(chain_state, file_id, root, "modify")
+    return {"file_id": file_id, "root": root, "op": "modify", "chain_update": chain_update}
 
 
 def delete_protocol(user: UserState, file_id: str, block_index: int, csp_state: CSPState, chain_state: Any, engine: CryptoEngine) -> Dict[str, Any]:
@@ -422,8 +422,8 @@ def delete_protocol(user: UserState, file_id: str, block_index: int, csp_state: 
     file_state.metadata["tree"] = tree
     file_state.mht_root = root
     file_state.metadata["mht_root"] = root
-    record_update(chain_state, file_id, root, "delete")
-    return {"file_id": file_id, "root": root, "op": "delete"}
+    chain_update = record_update(chain_state, file_id, root, "delete")
+    return {"file_id": file_id, "root": root, "op": "delete", "chain_update": chain_update}
 
 
 def ownership_transfer_protocol(from_user: UserState, to_user: UserState, file_id: str, csp_state: CSPState, chain_state: Any, engine: CryptoEngine) -> Dict[str, Any]:

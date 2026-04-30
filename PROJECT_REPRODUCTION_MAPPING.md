@@ -357,7 +357,7 @@ full 输出摘要：
 
 ## 7. 运行方式
 
-快速 mock 验证：
+快速 smoke 验证。默认连接 `.env` / `GANACHE_RPC_URL` 指向的本地 Ganache；如需内存链调试，显式加 `--chain-mode mock`：
 
 ```bash
 ./.venv/bin/python scripts/paper_tests/run_paper_repro.py --mode smoke --metrics all

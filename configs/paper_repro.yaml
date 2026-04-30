@@ -1,6 +1,6 @@
 smoke:
   _meta:
-    chain_mode: mock
+    chain_mode: real
     paper_scale: false
     comparable: false
   a:
@@ -44,7 +44,7 @@ smoke:
 
 full:
   _meta:
-    chain_mode: mock
+    chain_mode: real
     paper_scale: true
     comparable: false
   a:

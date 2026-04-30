@@ -8,11 +8,14 @@ from solcx import compile_files, get_installed_solc_versions, set_solc_version
 from web3 import HTTPProvider, Web3
 from web3.exceptions import Web3RPCError
 
+from src.utils import load_environment
+
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 def connect_web3() -> Web3:
+    load_environment()
     rpc_url = os.getenv("GANACHE_RPC_URL", "http://127.0.0.1:7545")
     rpc_timeout = float(os.getenv("DUPMIX_RPC_TIMEOUT", "15"))
     w3 = Web3(HTTPProvider(rpc_url, request_kwargs={"timeout": rpc_timeout}))
